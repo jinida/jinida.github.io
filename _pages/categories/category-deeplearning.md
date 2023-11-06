@@ -1,5 +1,5 @@
 ---
-title: "딥러닝 기본 지식"
+title: "Basic"
 layout: archive
 permalink: categories/Basic
 author_profile: true
