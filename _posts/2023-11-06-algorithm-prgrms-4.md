@@ -1,5 +1,5 @@
 ---
-title:  "231106 - 요격시스템 " 
+title:  "231109 - 요격시스템" 
 
 categories:
   - Programmers
@@ -14,56 +14,90 @@ last_modified_at: 2023-11-06
 ---
 <br>
 
-# 프로그래머스 - 요격시스템
+# 프로그래머스 - 과제 진행하기
+
+ - 문제 링크: https://school.programmers.co.kr/learn/courses/30/lessons/176962
 
 ## 제한 사항
- - 1 ≤ targets의 길이 ≤ 500,000
- - targets의 각 행은 [s,e] 형태입니다.
- - 이는 한 폭격 미사일의 x 좌표 범위를 나타내며, 개구간 (s, e)에서 요격해야 합니다.
- - 0 ≤ s < e ≤ 100,000,000
+ - 3 ≤ plans의 길이 ≤ 1,000
+ - 진행중이던 과제가 끝나는 시각과 새로운 과제를 시작해야하는 시각이 같은 경우 진행중이던 과제는 끝난 것으로 판단합니다.
 
 ## 사전 풀이
-가장 쉽게 생각해볼 수 있는 것은 이중 for문을 통해 전체 개구간(s, e)에 가장 많이 중첩되는 구간 을 찾고 지우면 될듯하다. 하지만 targets의 길이가 500,000을 넘어 이와 같은 방법으로는 시간 초과를 예상할 수 있다.
 
-그러므로 다른 방법을 생각해보아야 하는데 탐욕법 알고리즘 중 회의실 배정 문제와 비슷한 아이디어로 문제를 해결할 수 있을 듯 하였다.
-
-이 문제를 푸는 방법으로는 개구간 (s, e) 중 가장 작은 $s_{min}$를 가지는 $Seg_{min}$부터 시작하여 중첩된 구간을 삭제하면 된다.
-
-순서는 다음과같다.
-1. 목록에 남은 구간 중 가장 작은 $s_{min}$를 가지는 $Seg_{min}$를 선택한다.
-2. 구간의 시작인 targetSrc가 이전에 저장된 tempDst보다 클 경우 answer를 늘리고 tempDst를 갱신한다. (앞의 구간과 겹치는 부분이 없기 때문.)
-3. 구간의 시작인 targetSrc가 이전에 저장된 tempDst보다 작을 경우 구간에 포함되어 있으므로 answer를 늘리지 않는다. 또한 tempDst가 targetDst보다 작을 경우 갱신한다. (겹치는 구간이 발생함. 다음에 들어올 구간에 대해 $Seg_{i-1}$과는 겹쳐도 $Seg_{i}$와 겹침이 발생하지 않을 수 있음.)
- 
-또한 $Seg_{min}$을 선택하는 이유는 우리가 요격하고자 하는 점 $x$는 $Seg_{min}$의 $s_{min}$보다 항상 큰 값을 지니기 때문이다. 요격하고자 하는 점 $x$가 $s_{min}$보다 작을 경우 구간에 포함하지 않게되며 최적해에 포함되지 않는다.
+직관적인 문제였던 것 같다. 과제 시작 시각을 기준으로 정렬한 후 문제 풀이 시간이 다음 시간을 초과할 경우 그 문제를 남겨두고 초과하지 못하는 경우 답에 추가되는 방식으로 문제가 해결되며 답의 경우 과제의 시작 시각이 아닌 최근 풀었던 과제 순으로 답이 저장된다.
 
 ## 풀이
 
 ```cpp
+#include <string>
 #include <vector>
 #include <algorithm>
 using namespace std;
-// O(N * log(N))
 
-int solution(vector<vector<int>> targets)
- {
-    int answer = 0;
-    sort(targets.begin(), targets.end());
+int getElapsedTimeForTwoTime(string firstTime, string secondTime)
+{
+    int firstMinute = stoi(firstTime.substr(3));
+    int firstHour = stoi(firstTime.substr(0, 2));
     
-    int tempDst = 0;
-    for (auto& targetElem : targets)
+    int secondMinute = stoi(secondTime.substr(3));
+    int secondHour = stoi(secondTime.substr(0, 2));
+    
+    int retElapsedTime = (secondHour - firstHour) * 60 + secondMinute - firstMinute;
+    return retElapsedTime;
+}
+
+vector<string> solution(vector<vector<string>> plans) {
+    vector<string> answer;
+    vector<pair<string, int>> remainPlans;
+    sort(plans.begin(), plans.end(), [&](vector<string> plan1, vector<string> plan2)
     {
-        int targetSrc = targetElem[0];
-        int targetDst = targetElem[1];
+        return plan1[1] < plan2[1];
+    });
+
+    for (int i = 0; i != plans.size() - 1; ++i)
+    {
+        vector<string> curPlan = plans[i];
+        vector<string> nextPlan = plans[i + 1];
+        int remainTime = getElapsedTimeForTwoTime(curPlan[1], nextPlan[1]);
+        int curWorkTime = stoi(curPlan[2]);
         
-        if (tempDst <= targetSrc)
-        {    
-            tempDst = targetDst;
-            ++answer;
+        if (remainTime == curWorkTime)
+        {
+            answer.push_back(curPlan[0]);
+        }
+        else if (remainTime < curWorkTime)
+        {
+            remainPlans.push_back(make_pair(curPlan[0], curWorkTime - remainTime));
         }
         else
         {
-            tempDst = std::min(targetDst, tempDst);
+            answer.push_back(curPlan[0]);
+            remainTime = remainTime - curWorkTime;
+            
+            while (remainTime != 0 && !remainPlans.empty())
+            {
+                auto remainPlan = remainPlans.back();
+                remainPlans.pop_back();
+                if (remainPlan.second <= remainTime)
+                {
+                    remainTime = remainTime - remainPlan.second;
+                    answer.push_back(remainPlan.first);
+                }
+                else
+                {
+                    remainPlan.second = remainPlan.second - remainTime;
+                    remainPlans.push_back(remainPlan);
+                    remainTime = 0;
+                }
+            }
         }
+    }
+
+    answer.push_back(plans.back()[0]);
+    while (!remainPlans.empty())
+    {
+        answer.push_back(remainPlans.back().first);
+        remainPlans.pop_back();
     }
     return answer;
 }
