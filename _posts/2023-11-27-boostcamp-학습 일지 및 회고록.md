@@ -1,5 +1,5 @@
 ---
-title:  "Naver Boostcamp 학습 일지 및 회고록 - 2주차" 
+title:  "Naver Boostcamp 학습 일지 및 회고록 - 4주차" 
 
 categories:
   - Boostcamp
